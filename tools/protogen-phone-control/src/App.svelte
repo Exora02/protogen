@@ -3,7 +3,7 @@
   import FanSpeed from "./lib/FanSpeed.svelte";
   import RunAnimation from "./lib/RunAnimation.svelte";
   import Message from "./lib/Message.svelte";
-  let currentIP = "http://192.168.154.253";
+  let currentIP = "http://192.168.4.1";
   let isOnline = false;
   let isConnecting = false;
 

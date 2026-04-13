@@ -1,6 +1,7 @@
 #include <Arduino.h>
 #include <Adafruit_NeoPixel.h>
 #include <WiFi.h>
+#include <ESPmDNS.h>
 #include <ESPAsyncWebServer.h>
 #include <mutex>
 
@@ -13,23 +14,6 @@
 
 #define MAIN
 #ifdef MAIN
-void WiFiStationDisconnected(WiFiEvent_t event, WiFiEventInfo_t info)
-{
-
-  debugLogLine("WiFi lost connection. Reason: ");
-  debugLogLine(info.wifi_sta_disconnected.reason);
-  WiFi.disconnect(true, true);
-  delay(30000);
-  debugLog("Trying to reconnect to '");
-  debugLog(WIFI_NAME);
-  debugLog("' '");
-  debugLog(WIFI_PASSWORD);
-  debugLogLine("'.");
-  WiFi.begin(WIFI_NAME, WIFI_PASSWORD);
-
-  head->telemetry_needs_update = true;
-  debugLog(".");
-}
 
 AsyncWebServer server(80); // Create a web server on port 80
 
@@ -92,17 +76,19 @@ void setup()
   Serial.begin(9600); // Any baud rate should work
   delay(1000);
   Serial.println("=======Proto-proto-proto-gen!=======");
-  WiFi.mode(WIFI_STA);
-  WiFi.disconnect(true, true);
-  // Initialize wifi
-  WiFi.onEvent(WiFiStationDisconnected, WiFiEvent_t::ARDUINO_EVENT_WIFI_STA_DISCONNECTED);
-  debugLog("Trying to reconnect to '");
-  debugLog(WIFI_NAME);
-  debugLog("' '");
-  debugLog(WIFI_PASSWORD);
-  debugLogLine("'.");
-
-  WiFi.begin(WIFI_NAME, WIFI_PASSWORD);
+  
+  WiFi.mode(WIFI_AP);
+  // Setting up WiFi Access Point
+  Serial.print("Setting up Access Point '");
+  Serial.print(WIFI_NAME);
+  Serial.println("'...");
+  
+  if(WiFi.softAP(WIFI_NAME, WIFI_PASSWORD)) {
+    Serial.print("Access Point Ready. IP address: ");
+    Serial.println(WiFi.softAPIP());
+  } else {
+    Serial.println("Failed to set up Access Point!");
+  }
 
 
   server.on("/test", HTTP_GET, handleTestConnection);
@@ -129,14 +115,6 @@ void setup()
 
   xTaskCreatePinnedToCore(protogen_loop, "Animation Task", 16384, NULL, 1, NULL, 1);
 
-  while (WiFi.status() != WL_CONNECTED)
-  {
-    delay(2000);
-    Serial.print(".");
-  }
-
-  Serial.print("Connected to WiFi as ");
-  Serial.println(WiFi.localIP());
   head->telemetry_needs_update = true;
   // Tasks assignment
   server.begin();
