@@ -10,6 +10,15 @@
   async function testConnection() {
     isConnecting = true;
     try {
+      // First, get the latest IP from the Dev Server backend
+      let discoverResponse = await fetch('/api/get-ip');
+      if (discoverResponse.ok) {
+        let json = await discoverResponse.json();
+        if (json.ip && json.ip !== currentIP) {
+          currentIP = json.ip;
+        }
+      }
+
       let response = await fetch(`${currentIP}/test`);
       if (response.ok) {
         isOnline = true;
@@ -23,7 +32,7 @@
   }
 
   testConnection();
-  setInterval(testConnection, 10000);
+  setInterval(testConnection, 5000);
 </script>
 
 <main>
