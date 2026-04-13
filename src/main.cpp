@@ -1,6 +1,7 @@
 #include <Arduino.h>
 #include <Adafruit_NeoPixel.h>
 #include <WiFi.h>
+#include <HTTPClient.h>
 #include <ESPAsyncWebServer.h>
 #include <mutex>
 
@@ -135,14 +136,25 @@ void setup()
     Serial.print(".");
   }
 
-  Serial.print("Connected to WiFi as ");
+  Serial.print("\nConnected to WiFi as ");
   Serial.println(WiFi.localIP());
   head->telemetry_needs_update = true;
   // Tasks assignment
   server.begin();
 }
 
+unsigned long last_register_time = 0;
 void loop()
 {
+  if (millis() - last_register_time > 5000) {
+    last_register_time = millis();
+    if(WiFi.status() == WL_CONNECTED) {
+      HTTPClient http;
+      String url = "http://" + WiFi.gatewayIP().toString() + ":5173/api/register?ip=" + WiFi.localIP().toString();
+      http.begin(url);
+      http.GET();
+      http.end();
+    }
+  }
 }
 #endif
