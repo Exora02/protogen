@@ -1,7 +1,7 @@
 import { defineConfig } from 'vite'
 import { svelte } from '@sveltejs/vite-plugin-svelte'
 
-let protogenIp = 'http://192.168.4.1'; // fallback
+let discoveredIps = new Set<string>();
 
 // A custom plugin to receive the IP from ESP32
 const discoverPlugin = {
@@ -15,8 +15,11 @@ const discoverPlugin = {
       if (urlPath === '/api/register') {
         const ip = req.url.split('ip=')[1];
         if (ip) {
-          protogenIp = `http://${ip}`;
-          console.log(`[Discover] Protogen registered at ${protogenIp}`);
+          const fullIp = `http://${ip}`;
+          if (!discoveredIps.has(fullIp)) {
+            discoveredIps.add(fullIp);
+            console.log(`[Discover] Protogen registered at ${fullIp}`);
+          }
           res.statusCode = 200;
           res.end('OK');
           return;
@@ -26,7 +29,7 @@ const discoverPlugin = {
       if (urlPath === '/api/get-ip') {
         res.statusCode = 200;
         res.setHeader('Content-Type', 'application/json');
-        res.end(JSON.stringify({ ip: protogenIp }));
+        res.end(JSON.stringify({ ips: Array.from(discoveredIps) }));
         return;
       }
       next();
